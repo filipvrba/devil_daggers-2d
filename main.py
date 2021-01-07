@@ -96,8 +96,9 @@ class Projectile(Entity):
         )
 
         self.magnitude = 10
-        self.animate_position(self.position + (direction.normalized() *\
-                self.magnitude) + Vec2(random.randint(-ran, ran), random.randint(-ran, ran)), curve = curve.linear, duration = 1)
+        self.animate_position(self.position + (direction.normalized() *
+                self.magnitude) + Vec2(random.randint(-ran, ran),
+                random.randint(-ran, ran)), curve = curve.linear, duration = 1)
         destroy(self, 1)
 
 

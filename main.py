@@ -20,7 +20,8 @@ class Player(Entity):
             model = 'quad',
             scale = 0.8,
             texture = 'assets/player_light',
-            color = color.white
+            color = color.white,
+            
         )
         self.move_speed = 1.5
         self.vec_normal = Vec2.zero
@@ -28,6 +29,8 @@ class Player(Entity):
         self.velocity = Vec2(0, 0)
         self.rotate_normal = Vec2(0, 0)
         self.shoot_timer = Sequence(0.05, Func(self.shoot), loop = True)
+
+        self.collider = SphereCollider(self, center=self.position, radius=2),
 
     
     def update(self):
@@ -46,6 +49,7 @@ class Player(Entity):
         
         self.position += self.velocity * time.dt
         self.velocity = Vec2(0, 0)
+        self.projectiles = []
 
 
     def input(self, key):
@@ -63,11 +67,13 @@ class Player(Entity):
 
     def shoot(self):
         projectile = Projectile(self.position, (mouse.position * 10) - self.world_position, 0)
+        self.projectiles.append(projectile)
     
 
     def double_shoot(self):
         for index in range(8):
             projectile = Projectile(self.position, (mouse.position * 10) - self.world_position, 1)
+            self.projectiles.append(projectile)
     
 
     def roll(self):
@@ -80,7 +86,6 @@ class Player(Entity):
         x = position.x * cosi - position.y * sine
         y = position.x * sine + position.y * cosi
         return Vec2(x, y)
-
 
 
 class Projectile(Entity):
@@ -102,15 +107,58 @@ class Projectile(Entity):
         destroy(self, 1)
 
 
+class EnemySpawnerOne(Entity):
+    def __init__(self):
+        super().__init__(
+            parent = scene,
+            model = 'quad',
+            scale = 0.7,
+            texture = 'assets/enemy_spawner-01.png',
+            color = color.white,
+            position = Vec3(0, 0, -0.1),
+            x = 2,
+        )
+        trigger = Trigger(parent=self, trigger_targets=(player, ), model='circle', scale=0.8,
+                alpha = 0, position=self.position)
+        trigger.on_trigger_enter = Func(game_over)
+
+        self.crystal = Crystal(self)
+        self.animate_rotation(Vec3(0, 0, 360), curve = curve.linear, duration = 17, loop = True)
+
+
+class Crystal(Entity):
+    def __init__(self, parent):
+        super().__init__(
+            model = 'quad',
+            scale = 0.4,
+            texture = 'assets/crystal.png',
+            color = color.white,
+            position = Vec3(0, -0.37, -.1)
+        )
+
+        self.parent = parent
+        pos = Vec3(parent.x + self.position.x, parent.y + self.position.y, parent.z + self.position.z)
+        trigger = Trigger(parent=self, trigger_targets=(player,), model='quad', scale=0.7,
+                alpha = 0, rotation_z = 45, position=pos, triggerers=player.projectiles)
+        #trigger.on_trigger_enter = Func()
+
+
+def game_over():
+    """Settings all variables witch quit game and open up interface."""
+    player.disable()
+
+
 if __name__ == "__main__":
     app = Ursina()
     window.borderless = False
     window.title = 'Devil Daggers 2D'
     window.exit_button.visible = False
     window.color = color.black
+    window.vsync = False
 
     # Objects
     arena = Arena()
     player = Player()
+    enemy_spawner_one = EnemySpawnerOne()
 
     app.run()
